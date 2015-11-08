@@ -58,15 +58,17 @@ module apb_pulpino
 
             case (register_adr)
                 `REG_PAD_MUX:
+                begin
                     pad_mux_n[0] = PWDATA[`REG_PADCFG0];
                     pad_mux_n[1] = PWDATA[`REG_PADCFG1];
                     pad_mux_n[2] = PWDATA[`REG_PADCFG2];
                     pad_mux_n[3] = PWDATA[`REG_PADCFG3];
                     pad_mux_n[4] = PWDATA[`REG_PADCFG4];
                     pad_mux_n[5] = PWDATA[`REG_PADCFG5];
+                end
 
                 `REG_PAD_CONF:
-                    regs_n[PADDR[9:5]] = PWDATA;
+                    pad_cfg_n[PADDR[9:5]] = PWDATA;
 
                 // version reg can't be written to
             endcase
@@ -91,7 +93,7 @@ module apb_pulpino
                     PRDATA = {6'b0, pad_cfg_q[PADDR[9:5]][5], 4'b0, pad_cfg_q[PADDR[9:5]][4], 4'b0, pad_cfg_q[PADDR[9:5]][3], 4'b0, pad_cfg_q[PADDR[9:5]][2], 4'b0, pad_cfg_q[PADDR[9:5]][1], 4'b0, pad_cfg_q[PADDR[9:5]][0]};
 
                 `REG_INFO:
-                    PRDATA = {4{1'b0}, `DCACHE, `ICACHE, `ROM, `INSTR_RAM, `DATA_RAM,`VERSION};
+                    PRDATA = {4'b0000, `DCACHE, `ICACHE, `ROM, `INSTR_RAM, `DATA_RAM,`VERSION};
                 default:
                     PRDATA = 'b0;
             endcase
@@ -139,7 +141,7 @@ module apb_pulpino
         else
         begin            
             pad_mux_q          <=  pad_mux_n;
-            pad_cfg_q          <=  pad_cfg_n
+            pad_cfg_q          <=  pad_cfg_n;
         end
     end
 
