@@ -1,5 +1,6 @@
 // Address offset: bit [4:2]
 `define REG_PAD_MUX      4'b0000
+`define REG_BOOT_ADR     4'b0010
 `define REG_INFO         4'b0100
 
 // GPIO Map - for simplicity
@@ -20,9 +21,10 @@
 `define ICACHE           1'b0 // has instruction cache
 `define DCACHE           1'b0 // has data cache
 //`define PERIPHERALS      4'b1
-module apb_pulpino 
+module apb_pulpino
 #(
-    parameter APB_ADDR_WIDTH = 12  //APB slaves are 4KB by default
+    parameter APB_ADDR_WIDTH = 12,  //APB slaves are 4KB by default
+    parameter BOOT_ADDR      = 32'h8000
 )
 (
     input  logic                      HCLK,
@@ -35,11 +37,13 @@ module apb_pulpino
     output logic               [31:0] PRDATA,
     output logic                      PREADY,
     output logic                      PSLVERR,
-    
+
     output logic         [31:0] [5:0] pad_cfg_o,
-    output logic               [31:0] pad_mux_o
+    output logic               [31:0] pad_mux_o,
+    output logic               [31:0] boot_addr_o
 );
     logic [31:0]  pad_mux_q, pad_mux_n;
+    logic [31:0]  boot_adr_q, boot_adr_n;
     logic [31:0] [5:0] pad_cfg_q, pad_cfg_n;
 
     logic [APB_ADDR_WIDTH - 1:0]       register_adr;
@@ -47,23 +51,26 @@ module apb_pulpino
     assign register_adr = PADDR[5:2];
 
     // directly output registers to pad frame
-    assign pad_mux_o = pad_mux_q;
-    assign pad_cfg_o = pad_cfg_q;
+    assign pad_mux_o   = pad_mux_q;
+    assign pad_cfg_o   = pad_cfg_q;
+    assign boot_addr_o = boot_adr_q;
 
     // register write logic
     always_comb
     begin
         pad_mux_n = pad_mux_q;
         pad_cfg_n = pad_cfg_q;
+        boot_adr_n = boot_adr_q;
 
         if (PSEL && PENABLE && PWRITE)
         begin
 
             case (register_adr)
                 `REG_PAD_MUX:
-                begin
                     pad_mux_n     = PWDATA;
-                end
+
+                `REG_BOOT_ADR:
+                    boot_adr_n     = PWDATA;
 
                 `REG_PADCFG0:
                 begin
@@ -140,6 +147,9 @@ module apb_pulpino
                 `REG_PAD_MUX:
                     PRDATA = pad_mux_q;
 
+                `REG_BOOT_ADR:
+                    PRDATA = boot_adr_q;
+
                 `REG_PADCFG0:
                     PRDATA = {2'b00,pad_cfg_q[3],2'b00,pad_cfg_q[2],2'b00,pad_cfg_q[1],2'b00,pad_cfg_q[0]};
 
@@ -181,13 +191,14 @@ module apb_pulpino
         begin
             pad_mux_q          <= 32'b0;
             pad_cfg_q          <= '{default: 32'b0};
+            boot_adr_q         <= BOOT_ADDR;
             // cfg_pad_int[i][0]: PD, Pull Down
             // cfg_pad_int[i][1]: PU, Pull Up
             // cfg_pad_int[i][2]: SMT, Schmitt Trigger
             // cfg_pad_int[i][3]: SR, Slew Rate
             // cfg_pad_int[i][4]: PIN1, Drive Strength Select 1
             // cfg_pad_int[i][5]: PIN2, Drive Strength Select 2
-            
+
             pad_cfg_q[0]       <= 6'b000000; // always GPIO - seperate config
             pad_cfg_q[1]       <= 6'b000000; // always GPIO - seperate config
             pad_cfg_q[2]       <= 6'b000000; // always GPIO - seperate config
@@ -196,25 +207,26 @@ module apb_pulpino
             pad_cfg_q[5]       <= 6'b000000; // SPI Slave CS
             pad_cfg_q[6]       <= 6'b000000; // SPI Slave IO0
             pad_cfg_q[7]       <= 6'b000000; // SPI Slave IO1
-            pad_cfg_q[8]       <= 6'b000000; // SPI Slave IO2 
+            pad_cfg_q[8]       <= 6'b000000; // SPI Slave IO2
             pad_cfg_q[9]       <= 6'b000000; // SPI Slave IO3
             pad_cfg_q[10]      <= 6'b000000; // UART CTS
             pad_cfg_q[11]      <= 6'b000000; // UART RTS
-            pad_cfg_q[12]      <= 6'b000000; // UART TX 
+            pad_cfg_q[12]      <= 6'b000000; // UART TX
             pad_cfg_q[13]      <= 6'b000000; // UART RX
             pad_cfg_q[14]      <= 6'b000000; // SPI Master IO3
             pad_cfg_q[15]      <= 6'b000000; // SPI Master IO2
             pad_cfg_q[16]      <= 6'b000000; // SPI Master IO1
-            pad_cfg_q[17]      <= 6'b000000; // SPI Master IO0 
+            pad_cfg_q[17]      <= 6'b000000; // SPI Master IO0
             pad_cfg_q[18]      <= 6'b000000; // SPI Master CS
             pad_cfg_q[19]      <= 6'b000000; // I2C SDA
             pad_cfg_q[20]      <= 6'b000000; // I2C SCLK
 
         end
         else
-        begin            
+        begin
             pad_mux_q          <=  pad_mux_n;
             pad_cfg_q          <=  pad_cfg_n;
+            boot_adr_q         <=  boot_adr_n;
         end
     end
 
