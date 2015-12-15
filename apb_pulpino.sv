@@ -65,6 +65,7 @@ module apb_pulpino
     begin
         pad_mux_n = pad_mux_q;
         pad_cfg_n = pad_cfg_q;
+	clk_gate_n = clk_gate_q;
         boot_adr_n = boot_adr_q;
 
         if (PSEL && PENABLE && PWRITE)
