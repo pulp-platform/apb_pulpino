@@ -1,5 +1,6 @@
 // Address offset: bit [4:2]
 `define REG_PAD_MUX      4'b0000
+`define REG_CLK_GATE     4'b0001
 `define REG_BOOT_ADR     4'b0010
 `define REG_INFO         4'b0100
 
@@ -39,19 +40,23 @@ module apb_pulpino
     output logic                      PSLVERR,
 
     output logic         [31:0] [5:0] pad_cfg_o,
+    output logic               [31:0] clk_gate_o, 
     output logic               [31:0] pad_mux_o,
     output logic               [31:0] boot_addr_o
 );
     logic [31:0]  pad_mux_q, pad_mux_n;
     logic [31:0]  boot_adr_q, boot_adr_n;
+    logic [31:0]  clk_gate_q, clk_gate_n;
+
     logic [31:0] [5:0] pad_cfg_q, pad_cfg_n;
 
     logic [APB_ADDR_WIDTH - 1:0]       register_adr;
 
     assign register_adr = PADDR[5:2];
 
-    // directly output registers to pad frame
+    // directly output registers
     assign pad_mux_o   = pad_mux_q;
+    assign clk_gate_o  = clk_gate_q;
     assign pad_cfg_o   = pad_cfg_q;
     assign boot_addr_o = boot_adr_q;
 
@@ -68,6 +73,9 @@ module apb_pulpino
             case (register_adr)
                 `REG_PAD_MUX:
                     pad_mux_n     = PWDATA;
+
+                `REG_CLK_GATE:
+                    clk_gate_n    = PWDATA;
 
                 `REG_BOOT_ADR:
                     boot_adr_n     = PWDATA;
@@ -150,6 +158,9 @@ module apb_pulpino
                 `REG_BOOT_ADR:
                     PRDATA = boot_adr_q;
 
+                `REG_CLK_GATE:
+                    PRDATA = clk_gate_q;
+
                 `REG_PADCFG0:
                     PRDATA = {2'b00,pad_cfg_q[3],2'b00,pad_cfg_q[2],2'b00,pad_cfg_q[1],2'b00,pad_cfg_q[0]};
 
@@ -190,6 +201,7 @@ module apb_pulpino
         if(~HRESETn)
         begin
             pad_mux_q          <= 32'b0;
+            clk_gate_q         <= 32'b0;
             pad_cfg_q          <= '{default: 32'b0};
             boot_adr_q         <= BOOT_ADDR;
             // cfg_pad_int[i][0]: PD, Pull Down
@@ -225,6 +237,7 @@ module apb_pulpino
         else
         begin
             pad_mux_q          <=  pad_mux_n;
+            clk_gate_q         <=  clk_gate_n;
             pad_cfg_q          <=  pad_cfg_n;
             boot_adr_q         <=  boot_adr_n;
         end
