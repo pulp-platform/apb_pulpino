@@ -202,7 +202,7 @@ module apb_pulpino
         if(~HRESETn)
         begin
             pad_mux_q          <= 32'b0;
-            clk_gate_q         <= 32'b0;
+            clk_gate_q         <= '1;
             pad_cfg_q          <= '{default: 32'b0};
             boot_adr_q         <= BOOT_ADDR;
             // cfg_pad_int[i][0]: PD, Pull Down
