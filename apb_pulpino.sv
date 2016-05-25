@@ -26,7 +26,7 @@
 `define REG_PADCFG7     4'b1111 //BASEADDR+0x3C
 
 // info reg
-`define VERSION          5'b00001 // Version number 1.0
+`define VERSION          5'b00010 // Version number 1.0
 `define DATA_RAM         8'b00000100 //size of data ram in multiples of 8 kBye
 `define INSTR_RAM        8'b00000100 //size of instr ram in multiples of 8 kBye
 `define ROM              5'b00000 // size of ROM in kByte - floor to nearest
